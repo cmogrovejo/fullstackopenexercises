@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react'
-import axios from 'axios'
 import Filter from './components/Filter'
 import PersonForm from './components/PersonForm'
-import Persons from './components/Persons'
+import Person from './components/Persons'
+import personService from './services/persons'
 
 const App = () => {
-  const [persons, setPersons] = useState([]) 
+  const [persons, setPersons] = useState([])
   const [filterNames, setFilterNames] = useState('')
 
   const filteredPersons = persons.filter(person =>
@@ -13,18 +13,24 @@ const App = () => {
   )
 
   const hook = () => {
-    console.log('effect')
-    axios
-      .get('http://localhost:3001/persons')
-      .then(response => {
-        console.log('promise fulfilled')
-        setPersons(response.data)
+    personService
+      .getAll()
+      .then(initialPersons => {
+        setPersons(initialPersons)
       })
   }
 
   useEffect(hook, [])
 
-  console.log('render', persons.length, 'persons')
+  const eraseContact = (person) => {
+    if (window.confirm(`Delete ${person.name}?`)) {
+      personService
+        .erase(person.id)
+        .then(returnedContact => {
+          setPersons(persons.filter(n => n.id !== returnedContact.id))
+        })
+    }
+  }
 
   return (
     <div>
@@ -33,7 +39,16 @@ const App = () => {
       <h2>Add a new contact</h2>
       <PersonForm persons={persons} setPersons={setPersons} />
       <h2>Numbers</h2>
-      <Persons persons={filteredPersons} />
+      <div>
+        <ul>
+          {filteredPersons.map((person, i) =>
+            <Person
+              key={i}
+              person={person}
+              deleteContact={() => eraseContact(person)} />
+          )}
+        </ul>
+      </div>
     </div>
   )
 }

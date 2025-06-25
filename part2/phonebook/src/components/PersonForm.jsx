@@ -1,25 +1,38 @@
 import { useState } from 'react'
+import personService from '../services/persons'
 
-const PersonForm = ({persons, setPersons}) => {
+const PersonForm = ({ persons, setPersons }) => {
   const [newName, setNewName] = useState('')
   const [newNumber, setNewNumber] = useState('')
 
-    const addContact = (event) => { 
+  const addContact = (event) => {
     event.preventDefault()
     const contactObject = {
       name: newName,
-      number: newNumber,
-      id: persons.length + 1
+      number: newNumber
     }
 
     if (persons.some(person => person.name === newName)) {
-      alert(`${newName} is already added to phonebook`)
+      if (window.confirm(`${newName} is already added to phonebook, replace the old number with a new one?`)) {
+        const id = persons.find(p => p.name === newName).id;
+        personService
+          .update(id, contactObject)
+          .then(returnedContact => {
+            setNewName('')
+            setNewNumber('')
+            setPersons(persons.map(person => person.id !== id ? person : returnedContact))
+          })
+      }
       return
     }
 
-    setPersons(persons.concat(contactObject))
-    setNewName('')
-    setNewNumber('')
+    personService
+      .create(contactObject)
+      .then(returnedContact => {
+        setPersons(persons.concat(returnedContact))
+        setNewName('')
+        setNewNumber('')
+      })
   }
 
   const handleContactChange = (event) => {
@@ -32,18 +45,18 @@ const PersonForm = ({persons, setPersons}) => {
 
   return (
     <form onSubmit={addContact}>
-        <div>
-          Name: <input value={newName} onChange={handleContactChange} />
-        </div>
-        <br />
-        <div>
-          Number: <input value={newNumber} onChange={handleNumberChange} />
-        </div>
-        <br />
-        <div>
-          <button type="submit">Add Contact</button>
-        </div>
-      </form>
+      <div>
+        Name: <input value={newName} onChange={handleContactChange} />
+      </div>
+      <br />
+      <div>
+        Number: <input value={newNumber} onChange={handleNumberChange} />
+      </div>
+      <br />
+      <div>
+        <button type="submit">Add Contact</button>
+      </div>
+    </form>
   );
 }
 
